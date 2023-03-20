@@ -1,0 +1,243 @@
+<meta charset="utf-8" emacsmode="-*- markdown -*-">
+
+**LOG 750 - Laboratoire 3 - Version 1.0**
+
+# Objectifs du laboratoire
+- Se familiariser avec l'utilisation des textures et leur utilisation avancées.
+- Mettre en œuvre un algorithme d'ombrage comme shadow mapping
+- Se familiariser avec les concepts plus avancés du cours (animation, visibilité, carte d'environnement ...) en mettant en œuvre une fonctionnalité avancée. 
+
+Pour ce laboratoire, vous allez continuer avec votre code du laboratoire 2.
+
+!!! WARN: Fonctionnalité manquante
+    Vous devriez avoir mis en œuvre l'affichage des cubes et le graphe de scène pour le laboratoire 2. S’il vous manque ces fonctionnalités-là, merci de contacter le professeur ou le chargé de laboratoire. Ces fonctionnalités vous seront fournies. 
+
+    Les autres fonctionnalités du lab 2 (picking, feedback visuel, courbes) ne sont pas nécessaires pour ce laboratoire. **Cependant, si elles sont déjà en place, il faut qu'elle reste fonctionnelle pour le laboratoire 3.** 
+
+![Laboratoire 2](imgs/lab-3-start.png width="400px")
+
+Vous devez continuer à mettre en œuvre l'application du laboratoire 2 en améliorant l'affichage de façon significative. Ces améliorations seront mises en œuvre à plusieurs techniques que vous avez vues en cours.
+
+![Exemple d'un résultat final du laboratoire avec le ciel dynamique](imgs/lab-3-end.png width="400px")
+
+!!! WARN: Important
+    Les exemples fournis en cours seront particulièrement pertinents pour effectuer ce laboratoire. Veuillez prendre les exemples des cours 9, 10, 11. Attention, certaines fonctionnalités comme l'ombrage se feront à la fin du laboratoire. Il est vivement conseillé de les regarder et de vous en inspirer pour votre dernier laboratoire. 
+    
+!!! ERROR: Attention
+    Si vous utilisez des ressources externes, merci de les indiquer dans le rapport dans la section "References".
+
+# Mettre en place le répertoire pour le laboratoire
+
+De la même manière que pour les autres laboratoires, nous allons utiliser GitHub classroom. Cependant, contrairement aux autres laboratoires, nous ne fournissons pas de code de départ: **vous allez utiliser le code du laboratoire 2 pour initialiser le laboratoire 3**. Cependant, nous vous demandons d'utiliser **le nouveau lien GitHub classroom se trouvant sur Moodle pour créer un nouveau répertoire Git pour votre laboratoire 3**. Pour résumer:
+1. Créer un nouveau répertoire Git sur GitHub classroom en utilisant le lien sur Moodle.
+2. Cloner ce nouveau répertoire sur votre machine.
+3. Copiez les dossiers `src`,`3rdparty` et `assets` de votre laboratoire 2 au nouveau dossier du laboratoire. 
+
+Vous n'avez pas besoin de copier le fichier `CMakeLists.txt` se trouvant à la racine du projet.
+- Vérifiez que votre projet du laboratoire 3 compile.
+- Ajoutez les dossiers `src`,`3rdparty` et `assets` et envoyez ces changements sur GitHub. 
+
+# Devoir (100 pt)
+
+À partir du code que vous avez développé lors du laboratoire 2, vous devrez ajouter des fonctionnalités permettant de charger et d'afficher des textures sur les cubes, supporter le normal mapping et supporter les ombres (shadow mapping). D'autre part, vous devez choisir 2 fonctionnalités plus avancées dans une liste de fonctionnalités proposée. Vous pouvez proposer vos propres fonctionnalités, mais celles-ci doivent être validées par le professeur ou le chargé de laboratoire. 
+
+!!! ERROR: Fonctionnalité du laboratoire 2
+    Les fonctionnalités du laboratoire 2 (ajout d'un cube, sélection d'une face, rotation de cube sélectionné) doivent continuer à être présentes pour le laboratoire 3. **La modélisation en graphe de scène reste obligatoire.**
+
+## Utilisation des textures (15 pts)
+
+Chaque cube devra être affiché avec une texture sur ses six faces. L'application devra permettre à l'utilisateur de sélectionner la texture à appliquer sur un cube avant sa création en sélectionnant la texture active avec l'interface ImGUI. Vous pouvez utiliser `ImGui::ListBox` pour afficher une liste de texture à sélectionner. Un exemple de code utilisant cet objet: 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ cpp
+int textureActive = 0;
+const size_t TEXTURES_COUNT = 2;
+const char* TEXTURES[TEXTURES_COUNT] = {
+		"forest_ground_04",
+		"red_bricks_04"
+};
+ImGui::ListBox("Texture", &textureActive , TEXTURES, IM_ARRAYSIZE(TEXTURES));
+// textureActive contiendra l'identifiant de texture en tout temps.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+
+Vous devez utiliser les textures fournies sur Moodle sous format zip. Déposez les images extraites dans le dossier `assets`. Vous pouvez ajouter des textures supplémentaires (voir conseil plus bas).  Il est attendu que vous continuez à utiliser le modèle de matériaux de type Phong ou tout autre modèle ayant une composante diffuse et spéculaire. 
+
+Je vous rappelle enfin que vous devez changer le nuanceur de fragment du laboratoire 2 pour utiliser les textures (diffuse et plus tard de normal). Il ne faut pas oublier de donner une valeur à l'*uniform* représentant cette texture. Il faut bien activer la bonne texture et son unité de texture associée.
+
+!!! INFO: Textures supplémentaires 
+    Je vous conseille d'utiliser l'excellent site [Polyhaven](https://polyhaven.com/textures) pour télécharger des textures additionnelles. Lorsque vous sélectionner une texture, vous pouvez choisir sa résolution et comment les textures sont formatées (Blender, GLTF ou en archive). Je vous conseille d'utiliser le format archive et de sélectionner les textures suivantes:
+    - [Optionel]    AO/rough/metal (aussi appelée ARM)
+    - [Obligatoire] Diffuse 
+    - [Optionel]    Displacement — uniquement si vous mettez en œuvre le *displacement* dans les fonctionnalités avancées
+    - [Obligatoire] Normal (GL)
+    
+    Vous pouvez soit choisir le format d'image JPG ou PNG.
+
+## Control de la source directionelle (5 pts)
+
+Vous devez modifier l'interface ImGui pour permettre un control de la direction du soleil. Dans notre application, le soleil est modéliser par une source directionnelle. Il est attendu que vous utilisez les coordonnées sphériques pour produire cette direction. Les différents effets associer au soleil (i.e., calcul d'éclairage, ombrage et ciel dynamique) doivent être affectée directement la direction du soleil.
+
+!!! WARN: Utilisation de la direction du soeil
+    La direction controllée directement par l'utilisateur doit être utilisée pour: le calcul d'éclairage et d'ombrage (tâches suivantes) ainsi que le ciel dynamique (tâche avancée si choisie).
+
+## Normal mapping (15 pts + 10 pts rapport)
+
+Vous devrez modifier votre éclairage afin de supporter le normal mapping. Afin d'y arriver, vous devrez utiliser la normale se trouvant dans la texture aux coordonnées UV et appliquer une perturbation de la normale attachée à la géométrie. Cette perturbation s'effectue dans le nuanceur de fragment avant le calcul d'éclairage. 
+
+N'oubliez pas de convertir les couleurs de la texture en vecteurs de normales. D'autre part, n'oubliez pas de fournir la tangente dans le modèle du cube.  Les textures fournies sur Moodle contiennent déjà la texture de normale map. Pour une première mise en ouvre,  vous pouvez spécifiez une tangente arbitraire. **Vous devez vous vous assurer que la tangente est perpendiculaire à la normale**. Ensuite, vous pouvez regarder comment calculer ces tangentes en utilisant les formules du cours ou le code d'exemple fourni. 
+
+!!! INFO: Mauvaise valeur de tangentes
+    Si les tangentes sont perpendiculaires aux normales, vous devriez voir un éclairage perturber avec du *normal mapping*. Cependant, si les tangentes sont mauvaises, vous devriez voir que les ombres apparaissant sur la surface (à cause des variations de normales) ne sont pas correctement orientées par rapport à la source de lumière. Si c'est le cas, cela signifie que vous avez une erreur dans la spécification des tangentes. 
+
+
+## Shadow mapping (20 pts)
+
+Vous devez mettre en œuvre un algorithme de shadow mapping. Le calcul de l'ombrage doit se faire pour la source de lumière directionnelle du monde uniquement. Cette lumière représente le soleil et est indépendante de la caméra. L'orientation de cette lumière est contrôlée par utilisateur (voir tâche précédente). 
+
+Notez que comme nous avons affaire à une source de lumière directionnelle (modélisant une source à l'infini), il est conseillé d'utiliser une projection de type orthographique (et non perspective). Ici la direction de la caméra virtuelle utilisation la projection orthographique doit être la même que le soleil. Pour définir les paramètres de projection et la position de cette caméra: vous pouvez réutiliser la sphère englobante utilisée pour mettre à jour les paramètres `near` et `far` de la caméra. Il faut faire attention que les paramètres utilisés permettent à la caméra virtuelle de voir toute la scène. 
+
+Rappel: L'algorithme de shadow mapping est une approche en deux étapes:
+1. Générer l'information de profondeur depuis le point de vue de la lumière. Le résultat est de stocker dans un *framebuffer object* (FBO) pour effectuer un rendu dans une texture. 
+2. Générer l'éclairage depuis la caméra (comme normalement) et utiliser la texture contenant la profondeur (depuis la source de lumière) pour savoir si le point est visible ou non.
+
+!!! WARN: Conseil 
+    Il est très facile de faire des erreurs lors de la mise en œuvre de cet algorithme provoquant des erreurs d'affichage (p. ex. pas d'ombre ou des ombres non valides). Une des erreurs les plus communes est de mal de calculer la `viewMatrix` et `projMatrix` utiliser pour placer une nouvelle caméra pour capturer le point de vue de la scène depuis la source de lumière. 
+    
+    **Il est fortement conseiller de visualizer les information stocker dans la texture de profondeur avant de mettre en œuvre la deuxième étape**. Vous pouvez par exemple afficher la texture de profondeur ou effectuer un rendu normal a partir du point de vue du soleil. 
+
+    Une autre erreur régulière est le mauvais calcul des coordonnées UV utilisées pour lire la texture de profondeur. Il est conseil de remplacer l'éclairage par la couleur contenue dans cette texture. Ca vous permettera de facilement visualiser si vous avez un problème (si vous avez bien valider à l'étape précédente que la texture de profondeur est générée correctement).
+    
+
+## Fonctionnalités avancées (15 pts + 5 pts rapport)
+
+Vous devez choisir et mettre en œuvre **1** fonctionnalités avancées. Si vous mettez en œuvre plus de fonctionnalités avancées, celle-ci sera comptée en tant que fonctionnalités additionnelles.
+
+!!! WARN: Rapport
+    Il est attendu que vous derivez comment vous avez mis en oeuvre la fonctionalité avancée dans le rapport. Vous devez aussi décrire comment vous avez valider votre mise en oeuvre.
+
+### Option A: Ciel dynamique
+
+Dans cette fonctionnalité, vous devez ajouter un ciel animé de façon procédurale en fonction de la position du soleil. Pour rappel, la direction du soleil sera contrôlée avec des coordonnées sphériques avec ImGUI.  **Pour commencer, je vous conseille de commencer par intégrer le code d'exemple du skydome (cours 10).** cependant, contrairement à cet exemple qui utilise une texture unique (et non dynamique) pour calculer la couleur de l'environnement, nous allons calculer la couleur de façon dynamique. Nous allons toujours utiliser des textures, cependant, nous allons les définir les coordonnées UV de façon différentes pour permettre de mettre en place un ciel dynamique. 
+
+Normalement, dans une application de skydome, vous avez une seule texture fixe: 
+
+![Exemple de texture utilisée pour un skydome](imgs/lab-3-skydome.png)
+
+Cependant, ici les textures qui vous sont fournies sont les suivantes:
+
+Texture 1 | Texture 2 
+-------|------
+![Texture de devant]("imgs/lab-3-tint.png" width=200) | ![Texture de derrière]("imgs/lab-3-tint2.png" width=200) 
+
+
+La texture de devant correspond aux valeurs des pixels quand on regarde en direction du soleil. L'autre texture correspond quand on regarde dans le sens opposé au soleil. Les coordonnées UV de ces deux textures sont calculées en fonction de l'élévation du soleil et de l'élévation du point de vue. Voici la paramétrisation utilisée: 
+
+![Paramétrisation utilisée: `v.y` correspond à la composante `y` de la direction de vue. `s.y` correspond à la composante `y` de la direction du soleil. Les mêmes coordonnées UV sont utilisées pour accéder aux deux textures. Les textures sont ensuite mélangées avec l'angle thêta. Notez que la direction de vue et l'angle varient dans le plan image.](imgs/lab-3-parametrisation.png border=1)
+
+Les couleurs résultantes des deux textures sont mélangées en fonction du produit scalaire entre le point de vue et la direction du soleil. Par exemple en utilisant la fonction `mix`:
+
+~~~~~~~~~~~~~~~~~~~~~~ cpp
+// UV: coordonné de texture en fonction de l'élévation du soleil et de l'élévation du point de vue
+// orientation: produit scalaire entre la direction de vue et le soleil
+vec4 color1 = texture(tex1, UV);
+vec4 color2 = texture(tex2, UV);
+color = mix(color2, color1, orientation*0.5 + 0.5);
+~~~~~~~~~~~~~~~~~~~~~~
+
+Enfin, pour montrer où se trouve le soleil, vous calculez la distance entre la direction du soleil et du point de vue. Si la distance est faible (e.x., inférieure à 0.05), vous remplacer la couleur du ciel à (1.0, 1.0, 1.0).
+
+Un exemple de l'animation du ciel est disponible ici: [vidéo en ligne](https://www.youtube.com/watch?v=c8CK5euqD3I).
+
+!!! INFO: Conseil
+    Pour commencer cette mise en œuvre, il est fortement conseillé d'incorporer l'exemple skydome vu en cours. Ensuite, après vous être assuré que l'exemple vu en cours fonctionne correctement, vous pouvez modifier le nuanceur de fragment pour calculer la couleur du ciel dynamique.
+
+### Option B: Displacement mapping
+
+Vous devez mettre en œuvre une approche de *displacement mapping* en conjonction de la perturbation de l'éclairage par la texture de normale (*normal mapping*). Pour mettre en œuvre cette fonctionnalité, il est fortement conseillé d'utiliser le nuanceur de tesselation pour discrétiser de façon automatique vos surfaces. Le niveau de discrétisation doit être contrôlable par l'utilisateur. 
+
+Ensuite, vous devez déplacer chaque sommet d'un certain montant contenu dans la texture de tesselation. Le déplacement doit s'effectuer dans la direction de la normale de la surface (avant *normal mapping* — utiliser la normale géométrique). Vous devez recalculer la normale associée à la nouvelle surface. Celle-ci peut-être fait de la même façon que l'algorithme de *bump mapping*. 
+
+Enfin, vous ne devriez pas changer (ou uniquement de façon mineur) le nuanceur de fragment. L'éclairage doit s'effectuer avec la perturbation de normale. 
+
+!!! INFO: Idée de fonctionnalités additionnelle
+    Vous pouvez utiliser la distance à la caméra (la valeur de z dans l'espace NDC) pour décider quel niveau de tesselation vous allez effectuer. Par exemple, si une surface est proche de la caméra, vous pouvez augmenter le niveau de tesselation. 
+
+### Option C: Système de particules
+
+Vous devez mettre en œuvre une émission de particule lorsque vous ajouter ou supprimez des cubes dans votre application. Il est attendu que vous avez plusieurs origines d'émission si plusieurs cubes sont supprimés. **L'émission de particule pour un cube particulier est limitée dans le temps par une valeur fixe.** Il est attendu que votre mise en œuvre est robuste aux interactions utilisateur.  Par exemple, votre mise en œuvre ne doit pas générer d'erreur si de multiple destruction de cube survient rapidement. 
+
+### Option D: Deferred rendering
+
+Vous devez mettre en œuvre un algorithme de *deferred rendering* en utilisant un rendu multipasse. Dans la première passe, vous devez utiliser un *framebuffer object* (FBO) pour stocker les informations de la position (ou distance), les normales, les tangentes et des paramètres du matériau (kd, ks, n) dans plusieurs textures. Vous devez stocker toutes les informations nécessaires au calcul d'éclairage (à part les sources de lumière). 
+
+Ensuite, dans la seconde passe, on utilise les informations stockées dans les textures pour calculer l'éclairage de chaque source de lumière. Il faut utiliser `glBlendFunc(GL_SRC_ALPHA, GL_ONE)` pour accumuler la contribution de chaque source de lumière dans l'image finale. Avec cette approche il est facile de gérer un nombre arbitraire de sources de lumière sans devoir changer le nuanceur responsable du calcul d'éclairage. 
+
+Voici le pseudo-code:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ python
+# Pass 1
+fbo_active()
+glClear(color | depth)
+shader_gbuffer.bind()
+rendering_scene_to_texture() # graphe de scene
+fbo_unactive()
+
+# Pass 2
+glClear(color)
+shader_lighting.bind()
+glBlendFunc(ADD)
+for i in range(numLights):
+  shader_lighting.set_light(lights[i])
+  render_quad() 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+!!! WARN: Conseil
+    Comme pour la mise en œuvre du *shadow mapping*, il est fortement conseillé de visualiser le contenu des textures mise à jour par le FBO. Vous pouvez utiliser la même idée que `render_quad()` et afficher une texture à la fois. 
+
+### Option E: Saut et collisions
+
+Vous devez mettre en œuvre un contrôle de collision (via lancer de rayon) et un système de saut. L'idée est quand la personne appuie sur espace, une nouvelle vitesse en +Y est généré pour simuler un saut. Il faut un certain temps avant que la personne puisse ressauter. La vitesse est mise à jour par la gravité qui influence dans l'utilisateur dans la direction `-y`. Pour le calcul du changement de vitesse et de position, vous devez utiliser une méthode de simulation numérique comme la technique explicite de Euler (cours 8-9). Ici la position que vous pouvez mettre à jour est la position de la caméra. Cette simulation physique pourra être activée ou désactivée avec l'interface ImGUI.
+
+Ensuite, vous devez changer la simulation physique pour éviter de traverser les cubes formant le monde. Pour cela vous devez connaitre la distance au cube en dessous de la caméra et dans le sens du mouvement. Pour évaluer ces distances, nous allons utiliser une technique basée lancer de rayon. La mise en œuvre du lancer de rayon va uniquement être mise en œuvre en C++. Vous devez générer deux rayons:
+1. Un rayon pour connaitre la distance à la caméra dans l'axe des -y. Dans ce cas, la direction du rayon (dans l'espace caméra) est `[0, -1, 0]`. 
+2. Un rayon pour connaitre la distance dans la direction du mouvement horizontal. Dans ce cas, la direction du rayon (dans l'espace caméra) est `normalize([v_x, 0, v_z])`. 
+
+Notez que l'origine du rayon est la position de la caméra (`[0,0,0]` dans l'espace caméra). La distance minimale pourrait être 1 unité de distance. Pour calculer la distance d'intersection d'un rayon (exprimer dans l'espace caméra) à un cube, il faut:
+- Re-exprimer la direction et la positon du rayon dans l'espace monde (en multipliant par l'inverse de la matrice `viewMatrix`). 
+- Traverser le graphe de scène, calculer la matrice `modelMatrix` puis exprimer le rayon (distance et origine) dans l'espace local de chaque cube. Pour calculer l'intersection, vous pouvez utiliser l'intersection AABB vue en cours.
+
+Vous devez prendre le minimum de la distance trouvée. Si la distance trouvée est inférieure à la valeur désirée, modifier l'accélération ou directement la position. 
+
+## Fonctionnalité additionelles (15 pts)
+
+L'application doit aussi avoir des particularités additionnelles. Pour avoir tous les points, vos particularités additionnelles doivent être conséquentes (suffisamment complexes et difficiles à réaliser) et se comparer favorablement à celles des autres équipes. Vous pouvez voir ceci comme une compétition entre les équipes.
+
+Les fonctionnalités additionnelles peuvent soit être des fonctionnalités avancées supplémentaires que vous avez mises en œuvre, ou bien des idées venant de vous. Il n’y a aucune restriction pour ce dernier laboratoire sur le choix des fonctionnalités additionnel. Des fonctionnalités additionnelles faites dans le laboratoire 2 ne pourront pas être prises en compte sauf changement significatif. Si vous n'êtes pas sur, merci de contacter le professeur ou le chargé de laboratoire. 
+
+Quelques idées de fonctionnalités additionnelles:
+- Transparence des cubes (e.g., les trier en fonction de la distance)
+- Changer la couleur du soleil en fonction de la direction de celui-ci (ciel dynamique)
+- Ajouter des nuages, étoiles, lune (ciel dynamique)
+- Meilleurs approche de shadow mapping (i.e., PCF, mapping hierachique)
+- Mise en place du shadow mapping pour la source ponctuelle animée (i.e.: génération de carte de profondeur de type cubemap)
+- Mettre en œuvre un personnage animé ou un simple cube contrôlable. Changer la paramétrisation de la caméra. (saut et collisions)
+
+## Correction
+
+Contrairement aux deux laboratoire précédent, il n'aura pas de correction interactive du laboratoire. Les corrections se ferons uniquement sur les documents rendu dans Moodle. Cependant, il y aura encore évaluation du travail en équipe. Vous devrez remplir un formulaire d'auto-évaluation et d'évaluation du travail de vos coéquipiers via Teammates. Votre note finale pourrait ainsi varier de +/- 10 %.
+
+Utiliser le gabarit de rapport. Le gabarit contient la grille de correction ainsi que la pondération pour chaque élément. 
+
+## Soumettre votre devoir
+
+Créer une archive contenant:
+- tous les fichiers contenu dans les dossiers `src` et `assets`. 
+- tous autres fichiers nécessaires à l'utilisation de votre application (ex. image ajoutée)
+- le rapport respectant le gabarit (disponible sur Moodle) 
+
+Soumettez cette archive sur Moodle avant la deadline. N'oubliez pas de remplir le [teammates](https://teammatesv4.appspot.com/web/front/home) pour l'évaluation croisée des pairs. 
+
+<!-- Markdeep: -->
+<style class="fallback">
+    body {
+        visibility: hidden
+    }
+</style>
+<script src="https://morgan3d.github.io/markdeep/latest/markdeep.min.js?" charset="utf-8"></script> 
